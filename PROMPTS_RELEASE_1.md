@@ -15,6 +15,7 @@
 **Modules:** Infrastructure + Auth, Module 1 (Discover — core), Module 5 (Ask AI — core), Module 8 (Smart Alerts — basic)
 
 **What gets built in Release 1:**
+
 - User authentication and onboarding with risk profile
 - Stocks master database with 5,000+ NSE/BSE tickers
 - Daily market data ingestion pipeline (OHLCV + corporate actions)
@@ -45,6 +46,7 @@
 Before development begins, create accounts and verify access to all of the following services. Record all credentials in a secure vault (Doppler — see Section 0.6). Do not store any credentials in code, `.env` files committed to git, or any local notes file.
 
 **Hosting and Infrastructure:**
+
 - Vercel account — this is where the Next.js frontend will be deployed. Create a new project named `investom-frontend`. Connect it to your GitHub repository immediately so preview deployments work from day one.
 - Railway account — this is where the Node.js API server will be deployed. Create a new project named `investom-api`. Note the Railway project ID.
 - Modal.com account — this is where the Python AI microservices will run. Confirm you can deploy a basic Python function before proceeding.
@@ -58,10 +60,12 @@ Before development begins, create accounts and verify access to all of the follo
 > **Cost Strategy for Development:** During local development and early testing, use the free-tier options listed below. Switch to paid tiers only when deploying to staging/production or when free limits are exhausted. All services below are drop-in compatible with the same OpenAI-compatible API format unless noted.
 
 **Primary LLM — Claude (Anthropic):**
+
 - Anthropic account — create an API key. Note it as `ANTHROPIC_API_KEY`. Enable prompt caching on your account (required for cost optimisation). Set a usage alert at $50/month and a hard cap at $200/month.
 - **Free alternative for development:** Google AI Studio (studio.google.com) provides Gemini 1.5 Flash free with generous limits (1,500 requests/day, 1M context). Use the OpenAI-compatible endpoint so you can swap back to Claude without code changes. Note the key as `GEMINI_API_KEY`. This is suitable for all Haiku-equivalent tasks during development.
 
 **Embeddings and LLM Fallback — OpenAI:**
+
 - OpenAI account — create an API key. Note it as `OPENAI_API_KEY`. This is used only for embeddings (`text-embedding-3-small`) and as an LLM fallback. Set a usage alert at $20/month.
 - **Free alternative for embeddings:** Hugging Face Inference API (huggingface.co) provides the `sentence-transformers/all-MiniLM-L6-v2` embedding model free (no credit card required). Produces 384-dimension embeddings vs OpenAI's 1536 — acceptable for local development but switch to `text-embedding-3-small` before production for accuracy.
 - **Free alternative for LLM fallback:** Groq (console.groq.com) provides a free tier with `llama-3.1-8b-instant` at 14,400 requests/day and `mixtral-8x7b-32768` at 14,400 requests/day. Groq uses the OpenAI SDK format — swap `base_url` and `api_key` only. Note the key as `GROQ_API_KEY`. Use this as fallback instead of GPT-4o-mini during development to avoid OpenAI spend.
@@ -69,50 +73,59 @@ Before development begins, create accounts and verify access to all of the follo
 
 **Free Tier Summary Table:**
 
-| Service | Free Tier Limit | Production Ready? |
-|---------|----------------|-------------------|
-| Google AI Studio (Gemini 1.5 Flash) | 1,500 req/day, 1M tokens/min | No — switch to Claude Haiku for production |
-| Groq (Llama 3.1 8B) | 14,400 req/day | No — switch to Claude Haiku for production |
-| Hugging Face Inference API | Rate-limited, shared compute | No — switch to OpenAI embeddings for production |
-| Supabase (pgvector) | Included in free tier | Yes — Supabase free tier is usable for early staging |
-| Anthropic Claude 3.5 Haiku | No free tier — $0.80/1M input tokens | Yes — very cheap, use from staging onwards |
-| OpenAI text-embedding-3-small | No free tier — $0.02/1M tokens | Yes — use from staging onwards |
+
+| Service                             | Free Tier Limit                      | Production Ready?                                    |
+| ----------------------------------- | ------------------------------------ | ---------------------------------------------------- |
+| Google AI Studio (Gemini 1.5 Flash) | 1,500 req/day, 1M tokens/min         | No — switch to Claude Haiku for production           |
+| Groq (Llama 3.1 8B)                 | 14,400 req/day                       | No — switch to Claude Haiku for production           |
+| Hugging Face Inference API          | Rate-limited, shared compute         | No — switch to OpenAI embeddings for production      |
+| Supabase (pgvector)                 | Included in free tier                | Yes — Supabase free tier is usable for early staging |
+| Anthropic Claude 3.5 Haiku          | No free tier — $0.80/1M input tokens | Yes — very cheap, use from staging onwards           |
+| OpenAI text-embedding-3-small       | No free tier — $0.02/1M tokens       | Yes — use from staging onwards                       |
+
 
 **Market Data Services:**
 
 > **Cost Strategy for Development:** All three free options below are sufficient to build and test every R1 feature. EODHD ($19/month) is only needed when you move to staging/production and need reliable bulk historical data for all 5,000+ stocks. Do not pay for EODHD until the data pipeline (Prompt 4) is ready to ingest it.
 
 **Live Quotes and Instruments List:**
+
 - Dhan Developer API — apply for developer access at developers.dhan.co. Note the `CLIENT_ID` and `ACCESS_TOKEN`. Confirm you can call the live quote endpoint for NSE:RELIANCE before proceeding. **Free — no charges for the developer API.**
 - **Free alternative (no account needed):** NSE India's unofficial JSON endpoints (e.g., `https://www.nseindia.com/api/quote-equity?symbol=RELIANCE`) return live quotes with no API key. These are publicly accessible but unofficial, have no SLA, and are rate-limited by IP. Use only during local development to avoid Dhan account setup overhead. Do not use in staging/production.
 
 **Historical OHLCV and Fundamentals (Bulk Data):**
+
 - EODHD account — subscribe to the All World plan ($19/month). Note the `EODHD_API_KEY`. Confirm you can fetch the NSE exchange instruments list before proceeding. **Required for production — covers full 5,000+ stock history and fundamentals.**
 - **Free alternative for development (limited stocks):** Alpha Vantage free tier (alphavantage.co) provides daily OHLCV for individual stocks at 25 requests/day with no credit card. Sufficient to test the ingestion pipeline with 10–20 stocks before switching to EODHD. Note the key as `ALPHA_VANTAGE_API_KEY`. Does not cover Indian fundamentals — use only for OHLCV pipeline testing.
 - **Free alternative for fundamentals (limited):** Ticker (ticker.finology.in) provides basic fundamentals for NSE stocks via their website. No official API, but structured data is accessible for manual fixture creation during development. Use this to build `__tests__/fixtures/` data only — not for production ingestion.
 - **Free alternative — Yahoo Finance (yfinance Python library):** The `yfinance` Python library fetches NSE stock data (append `.NS` suffix, e.g., `RELIANCE.NS`) with no API key and no rate limit enforcement. Provides OHLCV + basic fundamentals. Use this in the backfill script and pipeline workers during development. Not suitable for production (unofficial, no SLA, breaks without notice). In `services/ai/`, add `yfinance` to `pyproject.toml` as a dev dependency and wrap calls in a feature flag controlled by the `ENVIRONMENT` env var — dev uses yfinance, staging/production uses EODHD.
 
 **Corporate Actions and Exchange Reference Data:**
+
 - BSE India Developer Portal — register at bseindia.com. No API key required for public endpoints but bookmark the base URLs for: corporate actions, quarterly results, annual reports, and bulk deals. **Free — always.**
 - **Also free:** NSE's public CSV/JSON endpoints for index constituent lists (Nifty 50, Nifty 100, etc.) — available at nseindia.com/market-data/live-equity-market. Use these during the seed script (Prompt 4.1) to assign `market_cap_category` and `index_memberships` without any API key.
 
 **Market Data Free Tier Summary:**
 
-| Service | Free Tier | Coverage | Production Ready? |
-|---------|-----------|----------|-------------------|
-| Dhan Developer API | Free always | Live quotes, instruments | Yes |
-| NSE unofficial JSON | No account needed | Live quotes only | No — no SLA |
-| Alpha Vantage | 25 req/day (free key) | OHLCV for individual stocks | No — too slow for 5,000 stocks |
-| yfinance (Python) | Unlimited, unofficial | OHLCV + basic fundamentals | No — breaks without notice |
-| BSE Developer Portal | Free always | Corporate actions, filings | Yes |
-| NSE index CSVs | Free always | Index constituents | Yes |
-| **EODHD ($19/month)** | 14-day trial | Full historical + fundamentals for all NSE/BSE stocks | **Yes — required for production** |
+
+| Service               | Free Tier             | Coverage                                              | Production Ready?                 |
+| --------------------- | --------------------- | ----------------------------------------------------- | --------------------------------- |
+| Dhan Developer API    | Free always           | Live quotes, instruments                              | Yes                               |
+| NSE unofficial JSON   | No account needed     | Live quotes only                                      | No — no SLA                       |
+| Alpha Vantage         | 25 req/day (free key) | OHLCV for individual stocks                           | No — too slow for 5,000 stocks    |
+| yfinance (Python)     | Unlimited, unofficial | OHLCV + basic fundamentals                            | No — breaks without notice        |
+| BSE Developer Portal  | Free always           | Corporate actions, filings                            | Yes                               |
+| NSE index CSVs        | Free always           | Index constituents                                    | Yes                               |
+| **EODHD ($19/month)** | 14-day trial          | Full historical + fundamentals for all NSE/BSE stocks | **Yes — required for production** |
+
 
 **Notifications:**
+
 - Resend account — create an API key. Note it as `RESEND_API_KEY`. Create a sending domain and verify it with DNS. Create an email template for alert notifications.
 - Firebase project — create a project named `investom`. Enable Cloud Messaging (FCM). Download the service account JSON — note it as `FIREBASE_SERVICE_ACCOUNT_JSON`.
 
 **Monitoring and Code Quality:**
+
 - Sentry account — create a project for Next.js and a separate project for Node.js. Note both DSN values.
 - GitHub repository — create a private repository named `investom`. Set up branch protection rules: require pull requests on `main`, require at least one review, require status checks to pass before merge.
 
@@ -123,6 +136,7 @@ Before development begins, create accounts and verify access to all of the follo
 These decisions are fixed for Release 1. Do not let your AI assistant suggest alternatives unless explicitly noted.
 
 **Frontend:**
+
 - Framework: Next.js 15 with App Router. Use TypeScript strict mode throughout. Every file must have explicit TypeScript types — no `any` types permitted.
 - Styling: TailwindCSS v3. No inline styles. No CSS modules.
 - Components: shadcn/ui. Run the shadcn init command and install: button, input, dialog, sheet, badge, card, dropdown-menu, toast, skeleton, tabs, scroll-area, separator, avatar, command (for search), tooltip.
@@ -134,6 +148,7 @@ These decisions are fixed for Release 1. Do not let your AI assistant suggest al
 - HTTP client inside client components: TanStack Query's `useQuery` and `useMutation`.
 
 **Backend (Node.js / Fastify):**
+
 - Language: TypeScript strict mode.
 - Framework: Fastify v4. Use the Fastify plugin system — no Express-style middleware chains.
 - ORM: Prisma v5. Database schema is the single source of truth — never write raw SQL that is not generated from migrations.
@@ -143,6 +158,7 @@ These decisions are fixed for Release 1. Do not let your AI assistant suggest al
 - Environment: All environment variables read from `process.env` and validated at startup with a Zod schema. If any required variable is missing, the server must refuse to start and log the missing variable name clearly.
 
 **Backend (Python / FastAPI):**
+
 - Language: Python 3.11+.
 - Framework: FastAPI. Use Pydantic v2 models for all request and response types.
 - LLM SDK: Anthropic Python SDK (primary). OpenAI Python SDK (fallback and embeddings only).
@@ -152,6 +168,7 @@ These decisions are fixed for Release 1. Do not let your AI assistant suggest al
 - Environment: All secrets injected as Modal secrets at deploy time.
 
 **Database:**
+
 - Primary: PostgreSQL via Supabase.
 - Cache: Upstash Redis.
 - Vector: pgvector extension inside Supabase (not Pinecone).
@@ -247,9 +264,10 @@ investom/
 
 Define every table required for Release 1 before generating any migration. Your AI assistant must generate the Prisma schema from these definitions.
 
-**`users` table** — managed by Supabase Auth, do not create manually. Supabase creates this in the `auth` schema.
+`**users` table** — managed by Supabase Auth, do not create manually. Supabase creates this in the `auth` schema.
 
-**`user_profiles` table** — extends Supabase auth.users
+`**user_profiles` table** — extends Supabase auth.users
+
 - `id` UUID primary key, foreign key to auth.users(id) on delete cascade
 - `username` TEXT unique not null
 - `full_name` TEXT
@@ -259,7 +277,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - `updated_at` TIMESTAMPTZ default now()
 - RLS Policy: users can only read and write their own row.
 
-**`user_risk_profiles` table**
+`**user_risk_profiles` table**
+
 - `id` UUID primary key
 - `user_id` UUID foreign key to user_profiles(id) on delete cascade, unique
 - `risk_appetite` ENUM: `conservative`, `moderate`, `aggressive`
@@ -270,7 +289,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - `updated_at` TIMESTAMPTZ default now()
 - RLS Policy: users can only read and write their own row.
 
-**`stocks` table** — market master data, read-only for all users
+`**stocks` table** — market master data, read-only for all users
+
 - `id` UUID primary key
 - `ticker_nse` TEXT unique — NSE symbol (e.g., "RELIANCE")
 - `ticker_bse` TEXT unique — BSE symbol (e.g., "500325")
@@ -290,7 +310,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - RLS Policy: all authenticated users can SELECT. No one can INSERT/UPDATE/DELETE (service role only).
 - Index on: `ticker_nse`, `sector`, `market_cap_category`, `is_active`.
 
-**`stock_prices_daily` table** — OHLCV data
+`**stock_prices_daily` table** — OHLCV data
+
 - `id` UUID primary key
 - `stock_id` UUID foreign key to stocks(id) on delete cascade
 - `date` DATE not null
@@ -305,7 +326,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - RLS Policy: all authenticated users can SELECT. Service role only for writes.
 - Index on: `(stock_id, date DESC)` for time-series queries.
 
-**`stock_fundamentals` table** — quarterly financial data
+`**stock_fundamentals` table** — quarterly financial data
+
 - `id` UUID primary key
 - `stock_id` UUID foreign key to stocks(id) on delete cascade
 - `period_type` ENUM: `annual`, `quarterly`
@@ -336,7 +358,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - Unique constraint on `(stock_id, period_type, period_end_date)`.
 - RLS Policy: all authenticated users can SELECT. Service role only for writes.
 
-**`corporate_actions` table**
+`**corporate_actions` table**
+
 - `id` UUID primary key
 - `stock_id` UUID foreign key to stocks(id)
 - `action_type` ENUM: `dividend`, `bonus`, `split`, `rights`, `buyback`
@@ -346,14 +369,16 @@ Define every table required for Release 1 before generating any migration. Your 
 - `created_at` TIMESTAMPTZ default now()
 - RLS Policy: all authenticated users can SELECT. Service role only for writes.
 
-**`watchlists` table**
+`**watchlists` table**
+
 - `id` UUID primary key
 - `user_id` UUID foreign key to user_profiles(id) on delete cascade
 - `name` TEXT not null default 'Default'
 - `created_at` TIMESTAMPTZ default now()
 - RLS Policy: users can only access their own rows.
 
-**`watchlist_items` table**
+`**watchlist_items` table**
+
 - `id` UUID primary key
 - `watchlist_id` UUID foreign key to watchlists(id) on delete cascade
 - `stock_id` UUID foreign key to stocks(id) on delete cascade
@@ -364,7 +389,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - Unique constraint on `(watchlist_id, stock_id)`.
 - RLS Policy: users can only access items in their own watchlists.
 
-**`price_alerts` table**
+`**price_alerts` table**
+
 - `id` UUID primary key
 - `user_id` UUID foreign key to user_profiles(id) on delete cascade
 - `stock_id` UUID foreign key to stocks(id) on delete cascade
@@ -378,7 +404,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - RLS Policy: users can only access their own alerts.
 - Index on `(stock_id, is_active, is_triggered)` — used by the alert checker worker.
 
-**`notifications` table**
+`**notifications` table**
+
 - `id` UUID primary key
 - `user_id` UUID foreign key to user_profiles(id) on delete cascade
 - `type` ENUM: `price_alert`, `system`
@@ -390,7 +417,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - RLS Policy: users can only SELECT their own rows. Service role for INSERT. Users can UPDATE `is_read` on their own rows only.
 - Index on `(user_id, is_read, created_at DESC)`.
 
-**`ai_response_cache` table** — prevents re-calling the LLM for identical requests
+`**ai_response_cache` table** — prevents re-calling the LLM for identical requests
+
 - `id` UUID primary key
 - `cache_key` TEXT unique not null — deterministic hash of: feature + stock_id + date + relevant parameters
 - `feature` TEXT not null — e.g., `stock_overview`, `screener_parse`
@@ -402,7 +430,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - RLS Policy: service role only for all operations.
 - Index on `(cache_key)` and `(expires_at)` for cleanup jobs.
 
-**`chat_conversations` table**
+`**chat_conversations` table**
+
 - `id` UUID primary key
 - `user_id` UUID foreign key to user_profiles(id) on delete cascade
 - `title` TEXT nullable — auto-generated from first message
@@ -410,7 +439,8 @@ Define every table required for Release 1 before generating any migration. Your 
 - `updated_at` TIMESTAMPTZ default now()
 - RLS Policy: users can only access their own conversations.
 
-**`chat_messages` table**
+`**chat_messages` table**
+
 - `id` UUID primary key
 - `conversation_id` UUID foreign key to chat_conversations(id) on delete cascade
 - `role` ENUM: `user`, `assistant`
@@ -430,6 +460,7 @@ Define all API routes before generating any handler code. Group by service.
 **Node.js / Fastify API base URL:** `https://api.investom.in/v1`
 
 **Auth routes (public):**
+
 - `POST /auth/signup` — body: `{ email, password, full_name }`
 - `POST /auth/login` — body: `{ email, password }`
 - `POST /auth/logout` — requires auth header
@@ -438,11 +469,13 @@ Define all API routes before generating any handler code. Group by service.
 - `POST /auth/reset-password` — body: `{ token, new_password }`
 
 **Onboarding routes (requires auth):**
+
 - `POST /onboarding/profile` — body: `{ username, experience_level }`
 - `POST /onboarding/risk-profile` — body: `{ risk_appetite, investment_horizon, primary_goal, monthly_investment_capacity }`
 - `GET /onboarding/status` — returns whether onboarding is complete
 
 **Stocks routes (requires auth):**
+
 - `GET /stocks/search?q={query}&limit=10` — returns matching stocks by name or ticker
 - `GET /stocks/{ticker}` — returns stock overview card data (price + fundamentals + metadata)
 - `GET /stocks/{ticker}/price` — returns current price and recent OHLCV
@@ -451,12 +484,14 @@ Define all API routes before generating any handler code. Group by service.
 - `GET /stocks/screener` — body via POST: `{ filters: [], sort_by, sort_order, limit, offset }`
 
 **Watchlist routes (requires auth):**
+
 - `GET /watchlist` — returns all watchlist items for the authenticated user
 - `POST /watchlist` — body: `{ stock_id, noted_price?, user_notes?, price_target? }`
 - `DELETE /watchlist/{watchlist_item_id}` — removes a stock from watchlist
 - `PATCH /watchlist/{watchlist_item_id}` — body: `{ user_notes?, price_target? }`
 
 **Alert routes (requires auth):**
+
 - `GET /alerts` — returns all alerts (active and triggered) for the user
 - `POST /alerts` — body: `{ stock_id, alert_type, target_price }`
 - `DELETE /alerts/{alert_id}` — soft delete (sets `is_active = false`)
@@ -465,6 +500,7 @@ Define all API routes before generating any handler code. Group by service.
 - `PATCH /notifications/read-all` — marks all notifications as read
 
 **Chat routes (requires auth):**
+
 - `GET /chat/conversations` — returns conversation list
 - `GET /chat/conversations/{id}` — returns conversation with messages
 - `POST /chat/message` — body: `{ conversation_id?, message: string }` — this proxies to the Python AI service and streams the response
@@ -487,6 +523,7 @@ Define every environment variable before writing any code. All must be added to 
 ---
 
 **Next.js Frontend (web app):**
+
 - `NEXT_PUBLIC_SUPABASE_URL` — **[REQUIRED]** Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — **[REQUIRED]** Supabase anon key (safe to expose to browser)
 - `NEXT_PUBLIC_API_BASE_URL` — **[REQUIRED]** Node.js API server URL (use `http://localhost:3001` locally)
@@ -494,6 +531,7 @@ Define every environment variable before writing any code. All must be added to 
 - `NEXT_PUBLIC_SENTRY_DSN` — **[OPTIONAL-DEV]** Sentry DSN for frontend errors; skip during development, errors are logged to console
 
 **Node.js API Server:**
+
 - `DATABASE_URL` — **[REQUIRED]** Prisma connection string (Supabase pooler URL)
 - `DIRECT_DATABASE_URL` — **[REQUIRED]** Prisma direct connection string (for migrations only)
 - `SUPABASE_URL` — **[REQUIRED]** Supabase project URL
@@ -521,15 +559,18 @@ Define every environment variable before writing any code. All must be added to 
 *Free-tier providers are the default. Paid providers are optional overrides activated only in staging/production via the `ENVIRONMENT` variable.*
 
 **— Free tier (use these to start, no credit card required):**
+
 - `GEMINI_API_KEY` — **[REQUIRED for dev]** Google AI Studio key — **free, 1,500 req/day, 1M tokens/min**. This is the primary LLM in development. Get it at aistudio.google.com with your Google account, no credit card required.
 - `GROQ_API_KEY` — **[REQUIRED for dev]** Groq API key — **free, 14,400 req/day** (Llama 3.1 8B + Mixtral 8x7B). Used as the LLM fallback in development when Gemini is unavailable. Get it at console.groq.com, no credit card required.
 - `HUGGINGFACE_API_KEY` — **[REQUIRED for dev]** Hugging Face Inference API key — **free tier, no credit card**. Used for `sentence-transformers/all-MiniLM-L6-v2` embeddings (384-dim) in development. Get it at huggingface.co. Sufficient for all R1 development and early testing.
 
 **— Paid providers (optional, activate only for staging/production):**
+
 - `ANTHROPIC_API_KEY` — **[OPTIONAL — staging/production only]** Claude 3.5 Haiku API key ($0.80/1M input tokens). When this key is present AND `ENVIRONMENT=production`, it overrides Gemini as the primary LLM. Enable prompt caching on your Anthropic account before using. Set a usage alert at $50/month.
 - `OPENAI_API_KEY` — **[OPTIONAL — staging/production only]** OpenAI API key. Used for `text-embedding-3-small` embeddings (1536-dim, higher accuracy than HuggingFace) and as the production LLM fallback (GPT-4o-mini). Leave unset in development. Set a usage alert at $20/month.
 
 **— Always required:**
+
 - `AI_SERVICE_API_KEY` — **[REQUIRED]** shared secret for service-to-service auth (must match the Node.js value); set any random UUID locally
 - `SUPABASE_URL` — **[REQUIRED]** for reading and writing AI response cache
 - `SUPABASE_SERVICE_ROLE_KEY` — **[REQUIRED]**
@@ -558,6 +599,7 @@ ENVIRONMENT=production  (full paid stack):
 ```
 
 The startup validation must enforce: at least one LLM key is present AND at least one market data source is available. On startup, the service must log a clear provider summary, e.g.:
+
 ```
 [AI Service] Active providers:
   LLM primary  : Gemini 1.5 Flash (FREE)
@@ -573,16 +615,19 @@ The startup validation must enforce: at least one LLM key is present AND at leas
 These are non-negotiable security controls. Your AI assistant must implement all of them.
 
 **Input Validation and Sanitisation:**
+
 - Every Fastify route must have a Zod schema for the request body, query parameters, and path parameters. If any field fails validation, return HTTP 400 with a descriptive error. Never pass unvalidated input to business logic, database queries, or LLM calls.
 - All user-provided text that will be included in an AI prompt must be stripped of HTML tags, truncated to a maximum of 500 characters, and checked against a list of known prompt injection patterns (e.g., "ignore previous instructions", "you are now", "system:", "assistant:"). If a match is found, reject the request with HTTP 400 and log the attempt.
 - Stock ticker inputs must be validated against the `stocks` master table — never pass a raw user-provided string as a ticker to any external API.
 
 **Authentication and Authorisation:**
+
 - Every protected route must validate the Supabase JWT from the `Authorization: Bearer <token>` header. Extract the `user_id` from the JWT claims. Never trust a user_id from the request body or query parameters.
 - All database queries on user-owned data must include a `WHERE user_id = $authenticated_user_id` clause. Never rely solely on Row Level Security — defence in depth means the application layer also enforces ownership.
 - Onboarding routes must be idempotent — calling them twice should update, not create duplicates.
 
 **Rate Limiting:**
+
 - Apply rate limiting as a Fastify plugin before any route handlers. Use Upstash Redis for distributed rate limit state so limits work correctly across multiple server instances.
 - Public routes (search, stock data): 60 requests per minute per IP.
 - Authenticated routes: 300 requests per minute per user.
@@ -590,19 +635,24 @@ These are non-negotiable security controls. Your AI assistant must implement all
 - If a limit is exceeded, return HTTP 429 with a `Retry-After` header.
 
 **HTTP Security Headers:**
+
 - Use the Fastify `@fastify/helmet` plugin to set: `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`.
 - For the Next.js frontend, add all security headers in `next.config.ts` using the `headers()` function. Include a `Content-Security-Policy` that explicitly whitelists Supabase, your API domains, and Cloudflare.
 
 **CORS:**
+
 - The Fastify API must only accept requests from the frontend domain (configured via environment variable). Do not use `*` as the CORS origin in staging or production.
 
 **Secrets:**
+
 - No secrets in code, ever. All secrets come from environment variables. The Doppler CLI syncs secrets to `.env` files locally, never committed to git. Add `.env` and `.env.local` to `.gitignore` before the first commit.
 
 **Supabase RLS:**
+
 - Before writing any application data, verify Row Level Security is enabled on all user data tables by running a test: attempt to SELECT from a user_profiles row using the anon key without any JWT — this should return an empty result, not the data.
 
 **AI Output Handling:**
+
 - Never render AI-generated text using `dangerouslySetInnerHTML`. Always render it as plain text or use a safe Markdown renderer that strips all HTML.
 - Every AI-generated output displayed in the UI must include the disclaimer: `"This is data and analysis only — not investment advice. Investom is not a SEBI-registered investment adviser."`
 
@@ -634,6 +684,7 @@ Apply these conventions consistently. Your AI assistant must follow them.
 The full testing prompts are in Prompts 20–22. Define the strategy here so it guides all preceding prompts.
 
 **Unit Tests:**
+
 - Every pure function (formatting utils, calculation helpers, Zod schema validators, prompt builders) must have unit tests.
 - Every React component that renders conditional states (loading, error, empty, populated) must have unit tests covering each state.
 - Every Fastify route handler must have a unit test with a mocked database and mocked external services.
@@ -642,11 +693,13 @@ The full testing prompts are in Prompts 20–22. Define the strategy here so it 
 - Coverage target: 80% line coverage minimum on all non-UI code.
 
 **Integration Tests:**
+
 - Every API route must have an integration test that calls the actual route against a test database (Supabase local instance or a dedicated test Supabase project).
 - Every data ingestion pipeline must have an integration test that calls the actual EODHD/Dhan test endpoints (or recorded fixtures).
 - Every BullMQ job must have an integration test that enqueues the job and verifies the worker completes it correctly.
 
 **End-to-End Tests:**
+
 - Framework: Playwright.
 - Every complete user journey in Release 1 must have an E2E test.
 - E2E tests run against the staging environment (deployed app + real test database).
@@ -671,6 +724,7 @@ For the Python AI service (`services/ai`): initialise a FastAPI project with Pyt
 For the shared package (`packages/shared`): create TypeScript type files for `Stock`, `UserProfile`, `Alert`, `Notification`, `ChatMessage`. These types must match the database schema defined in Prompt 0 Section 0.4 exactly.
 
 After scaffolding, verify that:
+
 - `npm run dev` starts the Next.js app on port 3000 without errors
 - `npm run dev` in `apps/api` starts the Fastify server on port 3001 without errors
 - `uvicorn app.main:app --reload` in `services/ai` starts the FastAPI server on port 8000 without errors
@@ -692,12 +746,14 @@ For ENUMs, define them as Prisma enums at the top of the schema file.
 After generating the schema, generate the first migration with the name `init_release_1_schema` and apply it to the Supabase development project using the `DIRECT_DATABASE_URL` connection string.
 
 After the migration runs, manually verify in the Supabase dashboard that:
+
 - All 13 tables exist with the correct column types
 - All foreign key constraints are visible
 - All indexes are created
 - The `pgvector` extension is enabled (this was done manually in Prompt 0 but confirm it)
 
 Then, in the Supabase SQL editor, manually create the following Row Level Security policies for every user-data table. Your AI assistant must generate the SQL for each policy:
+
 - `user_profiles`: SELECT/UPDATE where auth.uid() = id; no INSERT from user (created by trigger)
 - `user_risk_profiles`: SELECT/INSERT/UPDATE/DELETE where auth.uid() = user_id
 - `watchlists`: SELECT/INSERT/UPDATE/DELETE where auth.uid() = user_id
@@ -720,6 +776,7 @@ Ask your AI assistant to:
 Build the authentication API routes in `apps/api/src/routes/auth.ts` using Supabase Auth on the backend. The Node.js server proxies auth operations to Supabase — it does not manage sessions directly.
 
 Implement the following routes exactly as defined in Prompt 0 Section 0.5:
+
 - `POST /auth/signup` — call Supabase Auth signUp, return access token and refresh token. Return HTTP 409 if email already exists. Return HTTP 422 if password is under 8 characters.
 - `POST /auth/login` — call Supabase Auth signInWithPassword. Return HTTP 401 on invalid credentials with the message "Invalid email or password" (never distinguish which field is wrong, for security).
 - `POST /auth/logout` — invalidate the session in Supabase Auth.
@@ -728,11 +785,13 @@ Implement the following routes exactly as defined in Prompt 0 Section 0.5:
 - `POST /auth/reset-password` — verify token and update password.
 
 Build the onboarding routes:
+
 - `POST /onboarding/profile` — validate input with Zod, upsert the `user_profiles` row, return the updated profile.
 - `POST /onboarding/risk-profile` — validate input, upsert the `user_risk_profiles` row.
 - `GET /onboarding/status` — return `{ is_complete: boolean }` where complete means both profile and risk profile rows exist.
 
 Security requirements for auth routes:
+
 - Apply a strict rate limit of 5 requests per 15 minutes per IP on signup and login routes specifically (brute force prevention).
 - Log all failed login attempts (do not log passwords).
 - The `signup` route must validate that the username is alphanumeric plus underscores, 3–20 characters, and not in a reserved words list (admin, investom, sebi, nse, bse, support, api).
@@ -742,6 +801,7 @@ Security requirements for auth routes:
 Ask your AI assistant to:
 
 Build the following Next.js pages:
+
 - `/app/(auth)/login/page.tsx` — login form using React Hook Form + Zod. Fields: email, password. Show/hide password toggle. "Forgot password" link. "Sign up" link. Display API error messages below the form.
 - `/app/(auth)/signup/page.tsx` — signup form. Fields: full name, email, password, confirm password (client-side match only, confirm password is not sent to server). Password strength indicator (show "Weak / Fair / Strong" based on length + character variety).
 - `/app/(auth)/forgot-password/page.tsx` — single email field form.
@@ -752,12 +812,14 @@ Build the following Next.js pages:
   - Step 3: Risk profile (Risk Appetite + Investment Horizon + Primary Goal) — each displayed as radio button cards with explanations
 
 All auth pages:
+
 - Must be accessible before login (public routes).
 - Must redirect to `/discover` if the user is already logged in.
 - After successful signup, must redirect to `/onboarding`.
 - After successful onboarding, must redirect to `/discover`.
 
 Build a `middleware.ts` in `apps/web/` that:
+
 - Redirects unauthenticated users to `/login` if they try to access any `(dashboard)` route.
 - Redirects authenticated users who have not completed onboarding to `/onboarding`.
 - Allows public access to `/login`, `/signup`, `/forgot-password`, `/reset-password`, and all `/stock/:ticker` pages (public SEO pages).
@@ -773,6 +835,7 @@ Build a `middleware.ts` in `apps/web/` that:
 Ask your AI assistant to:
 
 Build a one-time seed script at `scripts/seed-stocks-master.ts`. This script:
+
 - Calls the EODHD API to fetch the complete list of instruments for NSE exchange (`https://eodhd.com/api/exchange-symbol-list/NSE?api_token=...&fmt=json`)
 - Calls the same endpoint for BSE exchange
 - Maps the API response fields to the `stocks` table schema defined in Prompt 0
@@ -798,6 +861,7 @@ Build a BullMQ job in `apps/api/src/jobs/daily-price-sync.ts` with a correspondi
 The job runs every weekday at 7:00 PM IST (after NSE closing at 3:30 PM + 15 min delayed data + 3 hours buffer). Schedule it using BullMQ's `repeat` option with a cron expression.
 
 The worker:
+
 - Fetches the EODHD end-of-day data for all NSE stocks for the current date using the bulk endpoint
 - For each stock, finds the corresponding `stock_id` from the `stocks` table using `ticker_nse`
 - Upserts a row in `stock_prices_daily` (ON CONFLICT on `(stock_id, date)` DO UPDATE)
@@ -815,6 +879,7 @@ Ask your AI assistant to:
 Build a BullMQ job and worker for fundamentals ingestion. This job runs once per week on Sunday at 2:00 AM IST.
 
 The worker:
+
 - Iterates over all active stocks in the `stocks` table in batches of 50
 - For each batch, calls the EODHD Fundamentals API to fetch the annual and quarterly financial data
 - Maps the EODHD response to the `stock_fundamentals` schema exactly as defined in Prompt 0 Section 0.4
@@ -836,6 +901,7 @@ Ask your AI assistant to:
 Build `GET /stocks/search` in the Fastify API.
 
 The route:
+
 - Accepts a query parameter `q` (string, minimum 2 characters, maximum 50 characters — validate with Zod)
 - Accepts an optional `limit` parameter (integer, 1–20, default 10)
 - Searches the `stocks` table using a PostgreSQL full-text search on `company_name` + `ticker_nse` + `ticker_bse`
@@ -847,6 +913,7 @@ The route:
 - Bypasses cache for queries under 3 characters (too broad to be worth caching)
 
 Edge cases to handle:
+
 - Empty query: return HTTP 400
 - Query with only special characters: sanitise and return empty results
 - No matches found: return HTTP 200 with empty array (not 404)
@@ -856,6 +923,7 @@ Edge cases to handle:
 Build a `StockSearchBar` component in `components/discover/StockSearchBar.tsx`.
 
 The component:
+
 - Is a text input with a dropdown results panel below it
 - Uses a debounce of 300ms before calling the API to avoid a request on every keystroke
 - Shows a loading spinner inside the input while the request is in flight
@@ -877,6 +945,7 @@ Ask your AI assistant to:
 Build `GET /stocks/{ticker}` in the Fastify API. This is the main stock page data endpoint.
 
 The route:
+
 - Validates `ticker` is a valid NSE ticker (alphanumeric, 2–20 characters)
 - Looks up the stock in the `stocks` table by `ticker_nse`
 - Returns 404 if not found or if `is_active = false`
@@ -896,6 +965,7 @@ Ask your AI assistant to:
 Build a FastAPI endpoint `POST /ai/stock/overview` that accepts the structured stock data and generates the narrative sections using the system prompt from `indian_stock_platform_prompt_guide.md` Section 1.5.
 
 Implementation requirements:
+
 - The system prompt is stored in `services/ai/app/prompts/stock_overview.py` as a constant string. It must exactly match the system prompt in the guide document.
 - Use Claude 3.5 Haiku for this task (it is a summary task, not complex analysis).
 - Enable Anthropic prompt caching on the system prompt by adding the `cache_control` field to the system message.
@@ -911,10 +981,12 @@ Ask your AI assistant to:
 Build the page at `/app/(dashboard)/stock/[ticker]/page.tsx` and the `StockOverviewCard` component.
 
 The page:
+
 - Is a Next.js server component that fetches the stock data using the `GET /stocks/{ticker}` endpoint server-side for SEO (so the stock data is in the HTML when search engines crawl it)
 - Falls back to client-side data fetching for real-time price updates using TanStack Query polling every 60 seconds
 
 The `StockOverviewCard` component shows:
+
 - Company name and NSE ticker prominently at the top
 - Current price, 1-day change (absolute ₹ and %, coloured green/red)
 - 52-week high and low with the current price positioned as a percentage between the two (visual slider)
@@ -936,6 +1008,7 @@ Ask your AI assistant to:
 Build `GET /stocks/heatmap` in the Fastify API.
 
 The endpoint:
+
 - Fetches today's price data for all active stocks grouped by sector
 - For each sector, computes:
   - Overall sector performance (market-cap-weighted average of daily % change)
@@ -961,6 +1034,7 @@ Ask your AI assistant to:
 Build the `SectorHeatmap` component in `components/discover/SectorHeatmap.tsx`.
 
 The component:
+
 - Renders a grid of sector tiles using TradingView Lightweight Charts' rectangle primitive, or if that is not suitable, use a custom SVG/div treemap approach where each tile's size is proportional to the sector's total market cap
 - Each tile shows: sector name, today's % change, number of advancing/declining stocks
 - Tile background colour: gradient from deep red (worst performance, e.g., -3% or worse) through white/neutral (flat) to deep green (best performance, e.g., +3% or better)
@@ -984,6 +1058,7 @@ Ask your AI assistant to:
 Build `POST /stocks/screener` in the Fastify API.
 
 The endpoint accepts two modes:
+
 1. **Structured filter mode**: a JSON array of filters, each with `{ field, operator, value }`. Directly converts this to a Prisma query with WHERE clauses.
 2. **Natural language mode**: a string query like "find IT stocks with high ROE and low debt". This is forwarded to the AI service to parse into structured filters, then the structured filters are executed.
 
@@ -992,6 +1067,7 @@ Supported filter fields: `sector`, `industry`, `market_cap_category`, `p_e_ratio
 Supported operators: `gt` (greater than), `lt` (less than), `gte`, `lte`, `eq`, `neq`, `in` (for array values like `sector IN [IT, Pharma]`).
 
 The query executor:
+
 - Joins `stocks` with `stock_fundamentals` (latest annual period) and `stock_prices_daily` (latest date)
 - Applies all filters as WHERE conditions
 - Returns a maximum of 100 results (prevent abuse)
@@ -1006,6 +1082,7 @@ Ask your AI assistant to:
 Build `POST /ai/screener/parse` in the Python AI service.
 
 This endpoint:
+
 - Takes a natural language query string
 - Uses Claude 3.5 Haiku with the system prompt from Section 1.1 of the guide document
 - Returns a structured JSON matching the filter format that `POST /stocks/screener` accepts
@@ -1022,12 +1099,14 @@ Build the Screener feature at `/app/(dashboard)/discover/screener/page.tsx`.
 The page has two modes toggled by a tab:
 
 **Natural Language Mode (default):**
+
 - A prominent text input: "Describe the stocks you're looking for..." with a submit button
 - Example queries shown as clickable chips below the input: "IT stocks with low debt and high ROE", "Profitable mid-cap pharma companies", "Dividend-paying PSU banks"
 - After submitting, show the parsed filters as a visual filter list so the user can see and optionally edit what the AI extracted before running the screen
 - A "Run Screen" button that executes the query
 
 **Manual Filter Builder Mode:**
+
 - A list of filter rows, each with: field selector dropdown + operator dropdown + value input
 - "Add Filter" button to add a new row
 - "Remove" button on each row
@@ -1035,6 +1114,7 @@ The page has two modes toggled by a tab:
 - Numeric fields show a numeric input with the correct unit label (₹, %, x)
 
 Both modes share the same results table:
+
 - Columns: Company, Sector, Market Cap, Price, P/E, ROE, ROCE, D/E, 3Y Revenue Growth
 - Each row has an "Add to Watchlist" icon button
 - Clicking a company name navigates to the stock overview page
@@ -1051,6 +1131,7 @@ Both modes share the same results table:
 Ask your AI assistant to build all four watchlist routes as defined in Prompt 0 Section 0.5.
 
 Additional requirements:
+
 - `POST /watchlist`: before inserting, verify the `stock_id` exists in the `stocks` table (prevents adding invalid stocks). Return HTTP 409 if the stock is already in the watchlist.
 - `PATCH /watchlist/{id}`: only `user_notes` and `price_target` can be updated — never `stock_id` or `watchlist_id`.
 - All routes must enforce the user's ownership (authenticated user's `user_id` must match the watchlist's `user_id`) at the application layer, not just via RLS.
@@ -1063,6 +1144,7 @@ Ask your AI assistant to:
 Build `/app/(dashboard)/discover/watchlist/page.tsx` and the `WatchlistTable` component.
 
 The watchlist page:
+
 - Shows all watchlisted stocks in a table with columns: Company Name & Ticker, Date Added, Noted Price, Current Price, Change Since Added (₹ and %), Price Target (if set), Actions
 - The "Change Since Added" column: shows the % change from `noted_price` to `current_price` if `noted_price` was set, otherwise shows 1-day change
 - Current prices are live (TanStack Query polling every 60 seconds)
@@ -1073,6 +1155,7 @@ The watchlist page:
 - Mobile layout: each stock is a card, not a table row
 
 Build a `WatchlistButton` component used on the Stock Overview Card and Screener results — a single button/icon that:
+
 - Shows a bookmark icon (not filled) if the stock is not in the watchlist
 - Shows a filled bookmark if it is in the watchlist
 - On click: calls the API to add or remove the stock
@@ -1090,6 +1173,7 @@ Ask your AI assistant to:
 Build a Redis-based view counter. Every time the `GET /stocks/{ticker}` endpoint is called by an authenticated user, increment a Redis sorted set key `trending:stocks:{today_date}` with the stock's NSE ticker as the member and the score as the view count.
 
 Build `GET /stocks/trending` which:
+
 - Reads the top 10 members from the sorted set by score (highest view count)
 - Returns the stock details (name, ticker, current price, 1-day % change, sector) for each
 - Cache this result for 5 minutes since it does not need to be real-time precise
@@ -1099,6 +1183,7 @@ Build `GET /stocks/trending` which:
 Build `TrendingStocksWidget` in `components/discover/TrendingStocksWidget.tsx`.
 
 The widget:
+
 - Shows as a compact card or panel (not a full page — it appears in a sidebar or on the discover homepage)
 - Lists 10 stocks with rank number, company name, ticker, sector, and 1-day % change
 - % change is coloured green/red
@@ -1120,6 +1205,7 @@ Ask your AI assistant to:
 Build `POST /chat/message` in the Fastify API.
 
 This route:
+
 - Validates the request: `{ message: string (max 500 chars), conversation_id?: string }`. Reject if message is empty or over 500 characters.
 - Applies prompt injection sanitisation to the `message` field.
 - If `conversation_id` is provided, verifies it belongs to the authenticated user. If not provided, creates a new conversation row.
@@ -1131,6 +1217,7 @@ This route:
 - Rate limits this route at 10 requests per minute per user (defined in Prompt 0).
 
 Also build:
+
 - `GET /chat/conversations` — returns a list of the user's last 20 conversations (id, title, created_at, last message preview)
 - `GET /chat/conversations/{id}` — returns a conversation with all its messages
 
@@ -1143,6 +1230,7 @@ Build `POST /ai/chat` in the Python FastAPI service.
 This endpoint receives: `{ message, conversation_history: [{ role, content }], user_context: { experience_level, risk_profile } }`.
 
 The service:
+
 - Selects the appropriate system prompt based on query classification:
   - First, run a lightweight Claude 3.5 Haiku call to classify the query type: `stock_qa`, `concept_explanation`, `stock_comparison`, `portfolio_qa`, `market_news`, `general`
   - Based on the type, select the appropriate system prompt (stock Q&A prompt, concept explainer prompt, comparison prompt, etc.)
@@ -1170,6 +1258,7 @@ Build the following components:
 `ChatPanel` — a sliding panel (not a modal, not a page) that slides in from the right side. On desktop: 420px wide, full viewport height. On mobile: full screen.
 
 The panel contains:
+
 - A header with "Ask AI" title, a "New Chat" button, and a close button
 - A conversation history sidebar (only on desktop, toggled by a history icon button) that lists past conversations
 - The main chat area showing the current conversation's messages
@@ -1178,6 +1267,7 @@ The panel contains:
 - A "Clear" icon that clears the current conversation (with confirmation)
 
 Message rendering:
+
 - User messages: right-aligned, dark background bubble
 - Assistant messages: left-aligned, light background bubble
 - Assistant messages render Markdown (use a safe Markdown renderer — bold, italic, bullet points, tables are allowed; no HTML rendering)
@@ -1185,6 +1275,7 @@ Message rendering:
 - While waiting for a response, show a typing indicator (three animated dots)
 
 Starter prompts: on a new conversation with no messages, show 4 clickable suggestion cards:
+
 - "Tell me about a company (e.g., Reliance, TCS)"
 - "Explain a financial concept"
 - "Compare two stocks"
@@ -1201,6 +1292,7 @@ Ask your AI assistant to:
 In the Python AI service, implement the `stock_qa` query handler.
 
 When the query is classified as `stock_qa`:
+
 - Extract the mentioned stock ticker or company name from the query using a lightweight Claude Haiku call
 - Fetch the stock's current data from the Node.js API (price + key fundamentals) — the AI service calls the internal API to get this data
 - Inject this structured data into the user message context before sending to Claude Haiku
@@ -1210,6 +1302,7 @@ When the query is classified as `stock_qa`:
 ### 12.2 Frontend Enhancements for Stock Q&A
 
 In the ChatPanel, when the assistant response contains stock data:
+
 - Render a compact `MiniStockCard` inline in the chat bubble — showing the stock's price, 1-day change, and 3 key metrics
 - This card links to the full stock overview page
 - The card appears above the text response, not replacing it
@@ -1223,11 +1316,13 @@ Ask your AI assistant to:
 In the Python AI service, implement the `concept_explanation` handler.
 
 When the query is classified as `concept_explanation`:
+
 - Use the system prompt from Section 5.3 of the guide document exactly
 - Use Claude 3.5 Haiku
 - Structure the response to clearly separate: Definition → Example → Why It Matters → Rule of Thumb → Related Terms
 
 In the ChatPanel frontend:
+
 - When the assistant response contains a concept explanation, render it in a structured card layout (not just plain text bubbles) — each section (Definition, Example, etc.) as a clearly labelled sub-section
 - At the bottom of a concept card, show "Related concepts" as clickable chips — clicking one sends a new message automatically asking about that concept
 
@@ -1242,6 +1337,7 @@ Ask your AI assistant to:
 In the Python AI service, implement the `stock_comparison` handler.
 
 When the query is classified as `stock_comparison`:
+
 - Extract the two (or more) stock names/tickers from the query
 - Fetch the current data for each stock from the internal API
 - Use the comparison system prompt from Section 5.4 of the guide document
@@ -1249,6 +1345,7 @@ When the query is classified as `stock_comparison`:
 - Use Claude 3.5 Haiku
 
 In the ChatPanel frontend:
+
 - When the response is a comparison, render the comparison table inline in the chat panel as a proper HTML table (not a text-art table) — use TailwindCSS for styling
 - The table should be horizontally scrollable on mobile since it contains multiple columns
 - Each stock name in the table is a link to its overview page
@@ -1264,6 +1361,7 @@ Ask your AI assistant to:
 Build all alert routes as defined in Prompt 0 Section 0.5.
 
 Implementation details for `POST /alerts`:
+
 - Validate that the `stock_id` exists and is active
 - Validate that `target_price` is a positive number and is not greater than 10x or less than 0.1x the current price (prevent obviously wrong alerts)
 - A user can have a maximum of 50 active alerts total — return HTTP 422 with a clear message if this limit is exceeded
@@ -1271,6 +1369,7 @@ Implementation details for `POST /alerts`:
 - After creating, immediately check if the alert is already triggered (e.g., user sets a "price above" alert below the current price) — if so, mark it triggered immediately and send a notification
 
 Implementation details for the alert checker worker (the job enqueued from the daily price sync in Prompt 4):
+
 - This BullMQ worker runs after every daily price update
 - Queries all `price_alerts` where `is_active = true` and `is_triggered = false`
 - For each alert, fetches the stock's current (end-of-day) price
@@ -1287,12 +1386,14 @@ Ask your AI assistant to:
 Build the alert creation UI in `components/alerts/AlertForm.tsx`.
 
 The component is used in multiple places:
+
 - As a standalone dialog triggered by an "Add Alert" button on the stock overview card
 - As an inline form in the Watchlist when a user sets a price target
 
 The form:
+
 - Shows the stock name and current price prominently at the top
-- Alert type selection: two large cards — "Alert me when price goes ABOVE ₹__" and "Alert me when price goes BELOW ₹__"
+- Alert type selection: two large cards — "Alert me when price goes ABOVE ₹**" and "Alert me when price goes BELOW ₹**"
 - The price input pre-fills with a suggested value: for "above", the nearest round number above current price; for "below", the nearest round number below
 - Validation: price must be a positive number, between ₹0.01 and ₹1,000,000
 - Shows the distance from current price: "₹45 below current price (−9.5%)"
@@ -1310,6 +1411,7 @@ Ask your AI assistant to:
 After the alert checker worker triggers an alert and creates a `notifications` row, broadcast it in real time using Supabase Realtime. Insert into the `notifications` table — Supabase Realtime automatically broadcasts the INSERT event to all subscribed clients.
 
 The `notifications` row for a price alert must contain:
+
 - `type: price_alert`
 - `title`: "Price Alert: RELIANCE" 
 - `body`: "RELIANCE (NSE) crossed your target of ₹450. Current price: ₹452.30"
@@ -1326,6 +1428,7 @@ Ask your AI assistant to:
 Build the notification system as a persistent UI element in the top navigation bar.
 
 `NotificationBell` component:
+
 - A bell icon in the header navigation
 - Shows a red badge with the count of unread notifications (max display: "9+" if over 9)
 - Clicking it opens the `NotificationDrawer`
@@ -1333,6 +1436,7 @@ Build the notification system as a persistent UI element in the top navigation b
 - When the drawer is opened, marks all visible notifications as read after 2 seconds
 
 `NotificationDrawer` component (shadcn Sheet from the right side):
+
 - Header: "Notifications" title and "Mark all read" link
 - Each notification item shows: notification type icon (bell for price alert), title, body, time ago (e.g., "2 minutes ago"), and an unread dot if not read
 - Price alert notifications have a "View Stock" button that navigates to the stock's overview page
@@ -1348,6 +1452,7 @@ Before proceeding to testing prompts, ask your AI assistant to handle all the fo
 ### 17.1 Loading States
 
 Every data-fetching component must have three clearly implemented states:
+
 - **Loading**: Show Skeleton components that match the shape of the actual content. Do not use generic spinners for content areas — Skeletons provide better perceived performance.
 - **Error**: Show an error card with: error icon, a user-friendly message (never expose raw error messages or stack traces), and a "Try again" button that retries the query.
 - **Empty**: Show a helpful empty state with: an icon, a clear explanation of why it is empty, and a call-to-action (e.g., "Add stocks to your watchlist to see them here").
@@ -1355,6 +1460,7 @@ Every data-fetching component must have three clearly implemented states:
 ### 17.2 Toasts and Feedback
 
 Install and configure the shadcn/ui `Toaster` component globally. Every user action that modifies data must show a toast:
+
 - Success: green, 3-second auto-dismiss
 - Error: red, 5-second auto-dismiss, with the error message
 - Info: neutral, 3-second auto-dismiss
@@ -1366,6 +1472,7 @@ Verify all R1 pages on three viewport sizes: 375px (iPhone SE), 768px (iPad), 14
 ### 17.4 Accessibility
 
 Every interactive element must have:
+
 - Keyboard focus indicators (do not remove the default browser outline — style it with TailwindCSS `focus-visible:ring` classes)
 - Appropriate ARIA labels on icon-only buttons (e.g., the close button on the chat panel must have `aria-label="Close chat panel"`)
 - Colour is never the only means of communicating information (the green/red price change must also show a ▲/▼ arrow symbol)
@@ -1373,6 +1480,7 @@ Every interactive element must have:
 ### 17.5 SEO
 
 The stock overview page at `/stock/{ticker}` is publicly crawlable. Ensure:
+
 - `generateMetadata` in the page file returns `{ title: "{Company Name} ({TICKER}) — Stock Analysis | Investom", description: "..." }`
 - The page has proper `<h1>` tags
 - Structured data (`JSON-LD`) for the stock entity on the page
@@ -1389,7 +1497,8 @@ Ask your AI assistant to:
 
 Build the GitHub Actions workflows in `.github/workflows/`.
 
-**`ci.yml`** — runs on every pull request to `main`:
+`**ci.yml`** — runs on every pull request to `main`:
+
 1. Checkout code
 2. Install dependencies for all three services
 3. Run TypeScript type checking: `tsc --noEmit` in `apps/web` and `apps/api`
@@ -1400,7 +1509,8 @@ Build the GitHub Actions workflows in `.github/workflows/`.
 8. Post a coverage report as a comment on the pull request
 9. Fail the PR if coverage drops below 80% on the API service
 
-**`deploy.yml`** — runs only on merge to `main`:
+`**deploy.yml**` — runs only on merge to `main`:
+
 1. Run all CI checks first (reuse the CI workflow as a dependency)
 2. Deploy the Next.js app to Vercel (using the Vercel CLI and `VERCEL_TOKEN` secret)
 3. Deploy the Node.js API to Railway (using the Railway CLI and `RAILWAY_TOKEN` secret)
@@ -1417,6 +1527,7 @@ Ask your AI assistant to write complete unit tests for every function and compon
 ### 19.1 Backend Unit Tests (Vitest)
 
 For each Fastify route, write unit tests that:
+
 - Mock the Prisma client and all external service calls
 - Test the happy path (correct input → correct response)
 - Test validation errors: missing required fields, wrong types, values out of range
@@ -1425,6 +1536,7 @@ For each Fastify route, write unit tests that:
 - Test cache behaviour: first call hits the database, second call returns the cached result
 
 Specific tests to write:
+
 - `POST /auth/signup`: valid data succeeds; duplicate email returns 409; weak password returns 422; reserved username returns 422
 - `GET /stocks/search`: query under 2 characters returns 400; valid query returns matching results; no results returns empty array with 200; injection characters are sanitised
 - `GET /stocks/{ticker}`: invalid ticker returns 404; inactive stock returns 404; valid ticker returns 200 with correct shape; response is cached on second call
@@ -1434,15 +1546,18 @@ Specific tests to write:
 - `POST /chat/message`: message over 500 characters returns 400; injection patterns in message returns 400; unauthenticated returns 401
 
 For each Zod schema:
+
 - Test that all valid combinations of input pass
 - Test that every invalid field (wrong type, missing required, over limit, under limit) fails with a descriptive error
 
 For each utility function (`calculatePriceChange`, `formatCurrency`, `formatPercentage`, `buildCacheKey`, `sanitiseUserInput`):
+
 - Test all edge cases: zero values, negative values, very large numbers, undefined/null inputs, special characters
 
 ### 19.2 Frontend Unit Tests (Vitest + Testing Library)
 
 For each component, write tests covering:
+
 - The component renders without crashing
 - Loading state renders Skeleton correctly
 - Error state renders the error card with retry button
@@ -1451,6 +1566,7 @@ For each component, write tests covering:
 - Interactive elements work (button clicks trigger the correct functions/store updates)
 
 Specific component tests:
+
 - `StockSearchBar`: debounce prevents API call on every keystroke; results dropdown appears after typing 2+ characters; keyboard navigation works (ArrowDown selects first result, Enter navigates); Escape closes dropdown; clicking outside closes dropdown
 - `WatchlistButton`: renders "not in watchlist" state correctly; clicking adds to watchlist (optimistic update); if API fails, reverts the optimistic update and shows error toast; renders "in watchlist" state after adding
 - `ChatPanel`: starts with empty state and starter prompt cards; sending a message adds a user bubble; typing indicator appears while waiting; assistant response appears and disclaimer is present; character counter updates as user types; send button disabled when input is empty
@@ -1459,12 +1575,14 @@ Specific component tests:
 - `SectorHeatmap`: renders all sectors; clicking a sector tile opens the side sheet; during market hours shows pulsing dot indicator
 
 For all Zustand stores:
+
 - `useChatStore`: initial state is correct; `setIsOpen` updates the state; `addMessage` appends to the correct conversation
 - `useAlertStore` (if created): adding an alert updates the list; removing an alert removes from list
 
 ### 19.3 Python Unit Tests (pytest)
 
 For each AI service function:
+
 - Mock all Anthropic and OpenAI API calls using `unittest.mock.patch`
 - Test that the correct model is used for each query type (Haiku vs Sonnet)
 - Test that prompt caching headers are included in system messages
@@ -1473,6 +1591,7 @@ For each AI service function:
 - Test that malformed LLM responses (non-JSON when JSON is expected) trigger a retry
 
 Specific tests:
+
 - `classify_query_type`: each of the 6 query types is classified correctly from representative inputs; unknown types default to `general`
 - `build_stock_qa_prompt`: stock data is correctly injected into the message context; injection patterns in the user query are sanitised before prompt building
 - `parse_screener_query`: valid natural language returns correctly structured filters; LLM returns malformed JSON → retry → second attempt succeeds; second attempt also fails → returns HTTP 500 with error message
@@ -1487,12 +1606,14 @@ Ask your AI assistant to write integration tests. These tests call the actual ru
 ### 20.1 Test Environment Setup
 
 Set up a dedicated integration test environment:
+
 - A separate Supabase project named `investom-test`
 - Upstash Redis with a test prefix on all keys to prevent pollution
 - All tests run within database transactions that are rolled back after each test (for tests that write data)
 - A test user is created once at the start of the test suite and a valid JWT is obtained to use in all authenticated route tests
 
 Create a `test-setup.ts` file (for TypeScript) and `conftest.py` (for Python) that:
+
 - Connects to the test database
 - Seeds the minimum required data: 10 real NSE stocks with price data and fundamentals (use real EODHD data fixtures stored in `__tests__/fixtures/`)
 - Creates a test user with a complete profile and risk profile
@@ -1501,26 +1622,33 @@ Create a `test-setup.ts` file (for TypeScript) and `conftest.py` (for Python) th
 ### 20.2 API Integration Tests
 
 **Auth flow integration:**
+
 - Sign up a new user → verify profile and watchlist rows are auto-created in the database → log in → get valid JWT → access protected route → log out → access protected route with old JWT returns 401
 
 **Stocks data flow:**
+
 - Call `GET /stocks/search?q=RELIANCE` → verify RELIANCE appears in results → call `GET /stocks/RELIANCE` → verify all fields are present and correctly typed → call the same endpoint again → verify the response has the `X-Cache: HIT` header (or equivalent)
 
 **Watchlist flow:**
+
 - Add a stock to watchlist → verify row in database → try to add same stock again → verify 409 → update notes → verify notes updated in database → remove from watchlist → verify row deleted
 
 **Alert flow:**
+
 - Create a `price_above` alert for stock at a price below current price → verify alert is immediately triggered and a notification is created → create a `price_below` alert at a reasonable price → verify alert is active and not triggered → simulate the alert checker worker with test price data that crosses the threshold → verify alert is triggered and notification is created
 
 **Chat flow:**
+
 - Send a message to the chat endpoint → verify conversation is created → verify message is saved → verify AI response is received and saved → send a follow-up message in the same conversation → verify conversation history is passed to the AI service (mock the AI service in this test) → verify the response is appended to the conversation
 
 ### 20.3 Data Pipeline Integration Tests
 
 **EODHD ingestion:**
+
 - Using a recorded API response fixture (not a live call — record the response once, store it in `__tests__/fixtures/eodhd/`), run the daily price sync job → verify the correct number of rows are upserted in `stock_prices_daily` → run the job again with the same data → verify it is idempotent (no new rows, existing rows updated)
 
 **Alert checker:**
+
 - Insert price data where stock X's close price is above an active alert's target price → run the alert checker worker → verify the alert is marked as triggered → verify a notification row is created → run the checker again → verify no duplicate notification is created
 
 ### 20.4 Supabase Realtime Integration Test
@@ -1539,6 +1667,7 @@ Ask your AI assistant to write Playwright E2E tests. These run against the stagi
 ### 21.1 Playwright Setup
 
 Configure Playwright in `apps/web/playwright.config.ts`:
+
 - Base URL: staging environment URL (from `PLAYWRIGHT_BASE_URL` environment variable)
 - Browsers to test: Chromium (desktop), Chromium (mobile viewport — 390x844), Firefox (desktop)
 - Retries: 2 on failure in CI, 0 locally
@@ -1551,6 +1680,7 @@ Configure Playwright in `apps/web/playwright.config.ts`:
 Write complete E2E tests for every critical user journey in Release 1:
 
 **Journey 1 — New User Signup and Onboarding:**
+
 1. Navigate to the homepage — verify redirect to `/login`
 2. Click "Sign up" — verify navigation to `/signup`
 3. Fill in name, email (use a unique email with a timestamp to prevent conflicts), password
@@ -1562,6 +1692,7 @@ Write complete E2E tests for every critical user journey in Release 1:
 9. Verify the welcome message or onboarding completion indicator is visible
 
 **Journey 2 — Stock Discovery and Search:**
+
 1. Log in as the test user
 2. Click the search bar in the navigation
 3. Type "INFY" — verify dropdown appears with Infosys as first result
@@ -1571,6 +1702,7 @@ Write complete E2E tests for every critical user journey in Release 1:
 7. Verify the disclaimer text is present
 
 **Journey 3 — Watchlist Management:**
+
 1. From the stock overview page for INFY, click "Add to Watchlist"
 2. Verify the button changes to "In Watchlist"
 3. Verify a success toast appears
@@ -1581,6 +1713,7 @@ Write complete E2E tests for every critical user journey in Release 1:
 8. Click "Remove" — confirm removal — verify INFY is no longer in the table
 
 **Journey 4 — Sector Heatmap:**
+
 1. Navigate to `/discover`
 2. Verify the sector heatmap is visible with multiple sector tiles
 3. Verify tiles have colour (not all grey — data must have loaded)
@@ -1590,6 +1723,7 @@ Write complete E2E tests for every critical user journey in Release 1:
 7. Verify the disclaimer is present in the AI narrative
 
 **Journey 5 — AI Screener:**
+
 1. Navigate to the screener page
 2. Type "profitable mid-cap IT companies with low debt" in the natural language input
 3. Click submit
@@ -1600,6 +1734,7 @@ Write complete E2E tests for every critical user journey in Release 1:
 8. Go back — click the "Add to Watchlist" icon on a screener result — verify it is added
 
 **Journey 6 — Ask AI Chat:**
+
 1. Click the floating chat button (bottom-right corner)
 2. Verify the chat panel slides open
 3. Verify starter prompt cards are visible
@@ -1613,6 +1748,7 @@ Write complete E2E tests for every critical user journey in Release 1:
 11. Click the chat button again — verify the conversation history is preserved
 
 **Journey 7 — Stock Q&A via Chat:**
+
 1. Open the chat panel
 2. Type "Tell me about Reliance Industries"
 3. Verify the response includes current price, key metrics, and sector information
@@ -1621,6 +1757,7 @@ Write complete E2E tests for every critical user journey in Release 1:
 6. Verify the response acknowledges the question but redirects to data only, ending with "The decision is entirely yours" or equivalent
 
 **Journey 8 — Price Alert Setup and In-App Notification:**
+
 1. Navigate to the stock overview page for TCS
 2. Click "Add Alert"
 3. Select "Alert me when price goes ABOVE"
@@ -1636,6 +1773,7 @@ Write complete E2E tests for every critical user journey in Release 1:
 
 **Journey 9 — Responsive Mobile Check:**
 Run the following at 390x844 viewport (Playwright `use: { viewport: { width: 390, height: 844 } }`):
+
 1. Open the homepage — verify it is not broken
 2. Tap the search icon — verify the mobile search overlay opens
 3. Search for a stock — verify results appear
@@ -1644,6 +1782,7 @@ Run the following at 390x844 viewport (Playwright `use: { viewport: { width: 390
 6. Send a message — verify the keyboard does not cover the input field
 
 **Journey 10 — Error and Edge Case Handling:**
+
 1. Navigate to `/stock/INVALIDTICKER` — verify a "Stock not found" error page (not a 500 crash)
 2. Open the chat and send an empty message — verify the send button is disabled
 3. Type 501 characters in the chat input — verify the character counter goes red and the send button is disabled
@@ -1675,6 +1814,7 @@ Before declaring Release 1 complete, ask your AI assistant to verify every item 
 ### 22.3 Disclaimer Completeness Audit
 
 Search the entire frontend codebase for all components that render AI-generated content. Verify that every single one has the disclaimer text: `"This is data and analysis only — not investment advice. Investom is not a SEBI-registered investment adviser."` Create a list of all AI output locations in the codebase and check them off one by one:
+
 - Stock overview AI narrative
 - Sector heatmap AI narrative
 - Screener AI filter explanation
@@ -1733,18 +1873,20 @@ Prompt 22 (Pre-Launch Checklist)
 
 When asking your AI assistant to build any AI feature, use this routing table to determine which model to use:
 
-| Feature | Model | Reason |
-|---------|-------|--------|
-| Query type classifier | Claude 3.5 Haiku | Simple classification, very cheap |
-| Stock Q&A (basic data questions) | Claude 3.5 Haiku | Factual retrieval, no complex reasoning |
-| Concept explainer | Claude 3.5 Haiku | Template-driven, structured output |
-| Stock comparison narrative | Claude 3.5 Haiku | Structured comparison, sufficient quality |
-| Screener NL parser | Claude 3.5 Haiku | JSON extraction from short text |
-| Heatmap narrative | Claude 3.5 Haiku | Short summary generation |
-| Stock overview card narrative | Claude 3.5 Haiku | Short narrative generation |
-| Watchlist digest | Claude 3.5 Haiku | Routine daily summary |
-| AI moderation (future) | Claude 3.5 Haiku | Simple classification |
-| Fallback (Anthropic down) | GPT-4o-mini | Cost-efficient fallback |
+
+| Feature                          | Model            | Reason                                    |
+| -------------------------------- | ---------------- | ----------------------------------------- |
+| Query type classifier            | Claude 3.5 Haiku | Simple classification, very cheap         |
+| Stock Q&A (basic data questions) | Claude 3.5 Haiku | Factual retrieval, no complex reasoning   |
+| Concept explainer                | Claude 3.5 Haiku | Template-driven, structured output        |
+| Stock comparison narrative       | Claude 3.5 Haiku | Structured comparison, sufficient quality |
+| Screener NL parser               | Claude 3.5 Haiku | JSON extraction from short text           |
+| Heatmap narrative                | Claude 3.5 Haiku | Short summary generation                  |
+| Stock overview card narrative    | Claude 3.5 Haiku | Short narrative generation                |
+| Watchlist digest                 | Claude 3.5 Haiku | Routine daily summary                     |
+| AI moderation (future)           | Claude 3.5 Haiku | Simple classification                     |
+| Fallback (Anthropic down)        | GPT-4o-mini      | Cost-efficient fallback                   |
+
 
 No Sonnet calls are required in Release 1. All R1 AI features are served by Haiku with prompt caching.
 
@@ -1752,18 +1894,20 @@ No Sonnet calls are required in Release 1. All R1 AI features are served by Haik
 
 ## Appendix C — Cache TTL Reference
 
-| Data | Cache Location | TTL | Notes |
-|------|---------------|-----|-------|
-| Stock search results | Upstash Redis | 5 minutes | Stale results acceptable |
-| Stock overview (price + fundamentals) | Upstash Redis | 1 hour | Prices update end of day |
-| Stock price only | Upstash Redis | 15 minutes | Acceptable market delay |
-| Sector heatmap (market hours) | Upstash Redis | 5 minutes | Live data feel during trading |
-| Sector heatmap (after hours) | Upstash Redis | 1 hour | Stable after market close |
-| Screener results | Upstash Redis | 10 minutes | Filters don't change that fast |
-| Trending stocks | Upstash Redis | 5 minutes | Updated regularly |
-| AI stock overview narrative | Supabase DB + Upstash | 24 hours | AI calls are expensive |
-| AI heatmap narrative | Supabase DB | 15 minutes | Should refresh during market hours |
-| Notifications unread count | Upstash Redis | Realtime subscription | No polling needed |
+
+| Data                                  | Cache Location        | TTL                   | Notes                              |
+| ------------------------------------- | --------------------- | --------------------- | ---------------------------------- |
+| Stock search results                  | Upstash Redis         | 5 minutes             | Stale results acceptable           |
+| Stock overview (price + fundamentals) | Upstash Redis         | 1 hour                | Prices update end of day           |
+| Stock price only                      | Upstash Redis         | 15 minutes            | Acceptable market delay            |
+| Sector heatmap (market hours)         | Upstash Redis         | 5 minutes             | Live data feel during trading      |
+| Sector heatmap (after hours)          | Upstash Redis         | 1 hour                | Stable after market close          |
+| Screener results                      | Upstash Redis         | 10 minutes            | Filters don't change that fast     |
+| Trending stocks                       | Upstash Redis         | 5 minutes             | Updated regularly                  |
+| AI stock overview narrative           | Supabase DB + Upstash | 24 hours              | AI calls are expensive             |
+| AI heatmap narrative                  | Supabase DB           | 15 minutes            | Should refresh during market hours |
+| Notifications unread count            | Upstash Redis         | Realtime subscription | No polling needed                  |
+
 
 ---
 
