@@ -48,7 +48,7 @@ Before development begins, create accounts and verify access to all of the follo
 - Vercel account — this is where the Next.js frontend will be deployed. Create a new project named `investom-frontend`. Connect it to your GitHub repository immediately so preview deployments work from day one.
 - Railway account — this is where the Node.js API server will be deployed. Create a new project named `investom-api`. Note the Railway project ID.
 - Modal.com account — this is where the Python AI microservices will run. Confirm you can deploy a basic Python function before proceeding.
-- Supabase account — create a new project named `investom`. Note the project URL, anon key, and service role key. Enable pgvector extension immediately after project creation (SQL: `create extension if not exists vector`). Enable Row Level Security on the database globally.
+- Supabase account — create a new project named `investom`. Note the project URL, **publishable key** (formerly anon key — safe to use in browser/client code), and **secret key** (formerly service role key — never expose to browser). Enable pgvector extension immediately after project creation (SQL: `create extension if not exists vector`). Enable Row Level Security on the database globally.
 - Upstash account — create a Redis database named `investom-cache`. Select a region closest to your Railway deployment region for lowest latency.
 - Cloudflare account — add your domain and configure the DNS to point at Vercel.
 - Doppler account — create a project named `investom` with environments: `development`, `staging`, `production`.
@@ -64,7 +64,7 @@ Before development begins, create accounts and verify access to all of the follo
 **Embeddings and LLM Fallback — OpenAI:**
 - OpenAI account — create an API key. Note it as `OPENAI_API_KEY`. This is used only for embeddings (`text-embedding-3-small`) and as an LLM fallback. Set a usage alert at $20/month.
 - **Free alternative for embeddings:** Hugging Face Inference API (huggingface.co) provides the `sentence-transformers/all-MiniLM-L6-v2` embedding model free (no credit card required). Produces 384-dimension embeddings vs OpenAI's 1536 — acceptable for local development but switch to `text-embedding-3-small` before production for accuracy.
-- **Free alternative for LLM fallback:** Groq (console.groq.com) provides a free tier with `llama-3.1-8b-instant` at 14,400 requests/day and `mixtral-8x7b-32768` at 14,400 requests/day. Groq uses the OpenAI SDK format — swap `base_url` and `api_key` only. Note the key as `GROQ_API_KEY`. Use this as fallback instead of GPT-4o-mini during development to avoid OpenAI spend.
+- **Free alternative for LLM fallback:** xAI Grok (x.ai/api) provides a free tier with `grok-3-mini` and `grok-2-mini` models. xAI uses the OpenAI SDK format with `base_url="https://api.x.ai/v1"` — swap `base_url` and `api_key` only, no other code changes. Note the key as `XAI_API_KEY`. Get it at console.x.ai with your X (Twitter) account. Use this as fallback instead of GPT-4o-mini during development to avoid OpenAI spend.
 - **Free alternative for vector search (development only):** pgvector in Supabase free tier is already included — no separate service needed for R1 since we are using Supabase for vectors.
 
 **Free Tier Summary Table:**
@@ -72,7 +72,7 @@ Before development begins, create accounts and verify access to all of the follo
 | Service | Free Tier Limit | Production Ready? |
 |---------|----------------|-------------------|
 | Google AI Studio (Gemini 1.5 Flash) | 1,500 req/day, 1M tokens/min | No — switch to Claude Haiku for production |
-| Groq (Llama 3.1 8B) | 14,400 req/day | No — switch to Claude Haiku for production |
+| xAI Grok (grok-3-mini) | Free tier available | No — switch to Claude Haiku for production |
 | Hugging Face Inference API | Rate-limited, shared compute | No — switch to OpenAI embeddings for production |
 | Supabase (pgvector) | Included in free tier | Yes — Supabase free tier is usable for early staging |
 | Anthropic Claude 3.5 Haiku | No free tier — $0.80/1M input tokens | Yes — very cheap, use from staging onwards |
@@ -82,15 +82,16 @@ Before development begins, create accounts and verify access to all of the follo
 
 > **Cost Strategy for Development:** All three free options below are sufficient to build and test every R1 feature. EODHD ($19/month) is only needed when you move to staging/production and need reliable bulk historical data for all 5,000+ stocks. Do not pay for EODHD until the data pipeline (Prompt 4) is ready to ingest it.
 
-**Live Quotes and Instruments List:**
-- Dhan Developer API — apply for developer access at developers.dhan.co. Note the `CLIENT_ID` and `ACCESS_TOKEN`. Confirm you can call the live quote endpoint for NSE:RELIANCE before proceeding. **Free — no charges for the developer API.**
-- **Free alternative (no account needed):** NSE India's unofficial JSON endpoints (e.g., `https://www.nseindia.com/api/quote-equity?symbol=RELIANCE`) return live quotes with no API key. These are publicly accessible but unofficial, have no SLA, and are rate-limited by IP. Use only during local development to avoid Dhan account setup overhead. Do not use in staging/production.
+**Live Quotes, OHLCV, and Instruments List:**
+- **yfinance (Python library) — primary market data source, no account or API key required.** Fetches NSE stock data by appending `.NS` suffix (e.g., `RELIANCE.NS`). Provides live/delayed quotes, full OHLCV history, and basic fundamentals for all NSE-listed stocks. Install via `pip install yfinance`. Used in all environments including production for R1 — it is sufficient for end-of-day data which is all R1 needs.
+- **Note on yfinance reliability:** yfinance is unofficial (scrapes Yahoo Finance). It is stable for end-of-day data and has been reliable for years, but has no formal SLA. For R1 this is an acceptable tradeoff — upgrade to EODHD only if yfinance breaks or you need intraday data in a future release.
+- **NSE India public JSON endpoints** (e.g., `https://www.nseindia.com/api/quote-equity?symbol=RELIANCE`) — use only as a fallback for live quote checks during development. No account needed but rate-limited by IP.
 
 **Historical OHLCV and Fundamentals (Bulk Data):**
 - EODHD account — subscribe to the All World plan ($19/month). Note the `EODHD_API_KEY`. Confirm you can fetch the NSE exchange instruments list before proceeding. **Required for production — covers full 5,000+ stock history and fundamentals.**
 - **Free alternative for development (limited stocks):** Alpha Vantage free tier (alphavantage.co) provides daily OHLCV for individual stocks at 25 requests/day with no credit card. Sufficient to test the ingestion pipeline with 10–20 stocks before switching to EODHD. Note the key as `ALPHA_VANTAGE_API_KEY`. Does not cover Indian fundamentals — use only for OHLCV pipeline testing.
 - **Free alternative for fundamentals (limited):** Ticker (ticker.finology.in) provides basic fundamentals for NSE stocks via their website. No official API, but structured data is accessible for manual fixture creation during development. Use this to build `__tests__/fixtures/` data only — not for production ingestion.
-- **Free alternative — Yahoo Finance (yfinance Python library):** The `yfinance` Python library fetches NSE stock data (append `.NS` suffix, e.g., `RELIANCE.NS`) with no API key and no rate limit enforcement. Provides OHLCV + basic fundamentals. Use this in the backfill script and pipeline workers during development. Not suitable for production (unofficial, no SLA, breaks without notice). In `services/ai/`, add `yfinance` to `pyproject.toml` as a dev dependency and wrap calls in a feature flag controlled by the `ENVIRONMENT` env var — dev uses yfinance, staging/production uses EODHD.
+- **yfinance — primary source for all environments in R1.** Add `yfinance` to `pyproject.toml` as a regular (not dev-only) dependency. Use it in the backfill script, daily OHLCV worker, and fundamentals worker across all environments. Wrap in a provider abstraction so it can be swapped for EODHD in a future release without changing worker code.
 
 **Corporate Actions and Exchange Reference Data:**
 - BSE India Developer Portal — register at bseindia.com. No API key required for public endpoints but bookmark the base URLs for: corporate actions, quarterly results, annual reports, and bulk deals. **Free — always.**
@@ -100,13 +101,12 @@ Before development begins, create accounts and verify access to all of the follo
 
 | Service | Free Tier | Coverage | Production Ready? |
 |---------|-----------|----------|-------------------|
-| Dhan Developer API | Free always | Live quotes, instruments | Yes |
-| NSE unofficial JSON | No account needed | Live quotes only | No — no SLA |
+| yfinance (Python) | Free, no account | OHLCV + quotes + basic fundamentals for all NSE stocks | **Yes — primary source for R1** |
+| NSE unofficial JSON | No account needed | Live quotes only | Dev fallback only — no SLA |
 | Alpha Vantage | 25 req/day (free key) | OHLCV for individual stocks | No — too slow for 5,000 stocks |
-| yfinance (Python) | Unlimited, unofficial | OHLCV + basic fundamentals | No — breaks without notice |
 | BSE Developer Portal | Free always | Corporate actions, filings | Yes |
 | NSE index CSVs | Free always | Index constituents | Yes |
-| **EODHD ($19/month)** | 14-day trial | Full historical + fundamentals for all NSE/BSE stocks | **Yes — required for production** |
+| **EODHD ($19/month)** | 14-day trial | Full historical + fundamentals for all NSE/BSE stocks | Optional — upgrade in R2 if yfinance is insufficient |
 
 **Notifications:**
 - Resend account — create an API key. Note it as `RESEND_API_KEY`. Create a sending domain and verify it with DNS. Create an email template for alert notifications.
@@ -488,7 +488,7 @@ Define every environment variable before writing any code. All must be added to 
 
 **Next.js Frontend (web app):**
 - `NEXT_PUBLIC_SUPABASE_URL` — **[REQUIRED]** Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — **[REQUIRED]** Supabase anon key (safe to expose to browser)
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — **[REQUIRED]** Supabase publishable key (formerly anon key — safe to expose to browser, used in all client-side Supabase calls)
 - `NEXT_PUBLIC_API_BASE_URL` — **[REQUIRED]** Node.js API server URL (use `http://localhost:3001` locally)
 - `NEXT_PUBLIC_APP_URL` — **[REQUIRED]** frontend URL (use `http://localhost:3000` locally)
 - `NEXT_PUBLIC_SENTRY_DSN` — **[OPTIONAL-DEV]** Sentry DSN for frontend errors; skip during development, errors are logged to console
@@ -497,14 +497,11 @@ Define every environment variable before writing any code. All must be added to 
 - `DATABASE_URL` — **[REQUIRED]** Prisma connection string (Supabase pooler URL)
 - `DIRECT_DATABASE_URL` — **[REQUIRED]** Prisma direct connection string (for migrations only)
 - `SUPABASE_URL` — **[REQUIRED]** Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY` — **[REQUIRED]** Supabase service role key (never expose to browser)
-- `SUPABASE_JWT_SECRET` — **[REQUIRED]** for verifying Supabase JWTs
+- `SUPABASE_SECRET_KEY` — **[REQUIRED]** Supabase secret key (formerly service role key — bypasses RLS, never expose to browser, server-side only). Also used by `createServerClient` for JWT verification — no separate JWT secret is needed in the new Supabase key system.
 - `REDIS_URL` — **[REQUIRED]** Upstash Redis REST URL — Upstash free tier (10,000 commands/day) is sufficient for development
 - `REDIS_TOKEN` — **[REQUIRED]** Upstash Redis REST token
 - `AI_SERVICE_URL` — **[REQUIRED]** internal URL of the Python FastAPI service (use `http://localhost:8000` locally)
 - `AI_SERVICE_API_KEY` — **[REQUIRED]** shared secret for internal service-to-service auth; set any random string locally
-- `DHAN_CLIENT_ID` — **[REQUIRED]** Dhan developer API client ID — free, no charges
-- `DHAN_ACCESS_TOKEN` — **[REQUIRED]** Dhan developer API access token — free, no charges
 - `EODHD_API_KEY` — **[OPTIONAL-PROD]** EODHD market data API key ($19/month); leave unset in development — the data pipeline will use yfinance when this is absent (controlled by `ENVIRONMENT` flag)
 - `ALPHA_VANTAGE_API_KEY` — **[OPTIONAL-DEV]** Alpha Vantage free API key (25 req/day); use during development to test the OHLCV pipeline with a small number of stocks when yfinance is not available
 - `RESEND_API_KEY` — **[OPTIONAL-DEV]** Resend email service key; leave unset in development — email sending is skipped and a console log is emitted instead. Set for staging/production.
@@ -522,17 +519,23 @@ Define every environment variable before writing any code. All must be added to 
 
 **— Free tier (use these to start, no credit card required):**
 - `GEMINI_API_KEY` — **[REQUIRED for dev]** Google AI Studio key — **free, 1,500 req/day, 1M tokens/min**. This is the primary LLM in development. Get it at aistudio.google.com with your Google account, no credit card required.
-- `GROQ_API_KEY` — **[REQUIRED for dev]** Groq API key — **free, 14,400 req/day** (Llama 3.1 8B + Mixtral 8x7B). Used as the LLM fallback in development when Gemini is unavailable. Get it at console.groq.com, no credit card required.
+- `GEMINI_MODEL` — **[REQUIRED for dev]** Gemini model name to use. Default: `gemini-1.5-flash`. Change to `gemini-2.0-flash` or newer without any code changes.
+- `XAI_API_KEY` — **[REQUIRED for dev]** xAI Grok API key — **free tier available**. Used as the LLM fallback in development when Gemini is unavailable. Get it at console.x.ai with your X (Twitter) account, no credit card required. Uses the OpenAI SDK format with `base_url="https://api.x.ai/v1"`.
+- `XAI_MODEL` — **[REQUIRED for dev]** xAI model name to use. Default: `grok-3-mini`. Change to `grok-4-mini` or newer without any code changes.
 - `HUGGINGFACE_API_KEY` — **[REQUIRED for dev]** Hugging Face Inference API key — **free tier, no credit card**. Used for `sentence-transformers/all-MiniLM-L6-v2` embeddings (384-dim) in development. Get it at huggingface.co. Sufficient for all R1 development and early testing.
+- `HUGGINGFACE_EMBEDDING_MODEL` — **[REQUIRED for dev]** HuggingFace embedding model name. Default: `sentence-transformers/all-MiniLM-L6-v2`.
 
 **— Paid providers (optional, activate only for staging/production):**
-- `ANTHROPIC_API_KEY` — **[OPTIONAL — staging/production only]** Claude 3.5 Haiku API key ($0.80/1M input tokens). When this key is present AND `ENVIRONMENT=production`, it overrides Gemini as the primary LLM. Enable prompt caching on your Anthropic account before using. Set a usage alert at $50/month.
-- `OPENAI_API_KEY` — **[OPTIONAL — staging/production only]** OpenAI API key. Used for `text-embedding-3-small` embeddings (1536-dim, higher accuracy than HuggingFace) and as the production LLM fallback (GPT-4o-mini). Leave unset in development. Set a usage alert at $20/month.
+- `ANTHROPIC_API_KEY` — **[OPTIONAL — staging/production only]** Claude API key ($0.80/1M input tokens for Haiku). When this key is present AND `ENVIRONMENT=production`, it overrides Gemini as the primary LLM. Enable prompt caching on your Anthropic account before using. Set a usage alert at $50/month.
+- `ANTHROPIC_MODEL` — **[OPTIONAL — staging/production only]** Claude model name. Default: `claude-haiku-4-5`. Change to a newer Haiku version without any code changes.
+- `OPENAI_API_KEY` — **[OPTIONAL — staging/production only]** OpenAI API key. Used for `text-embedding-3-small` embeddings (1536-dim, higher accuracy than HuggingFace) and as the production LLM fallback. Leave unset in development. Set a usage alert at $20/month.
+- `OPENAI_LLM_MODEL` — **[OPTIONAL — staging/production only]** OpenAI fallback LLM model name. Default: `gpt-4o-mini`.
+- `OPENAI_EMBEDDING_MODEL` — **[OPTIONAL — staging/production only]** OpenAI embedding model name. Default: `text-embedding-3-small`.
 
 **— Always required:**
 - `AI_SERVICE_API_KEY` — **[REQUIRED]** shared secret for service-to-service auth (must match the Node.js value); set any random UUID locally
 - `SUPABASE_URL` — **[REQUIRED]** for reading and writing AI response cache
-- `SUPABASE_SERVICE_ROLE_KEY` — **[REQUIRED]**
+- `SUPABASE_SECRET_KEY` — **[REQUIRED]** Supabase secret key (same key as the Node.js service, used for cache reads/writes)
 - `ENVIRONMENT` — **[REQUIRED]** `development`, `staging`, or `production` — this single variable controls which providers are active
 
 **LLM Provider Selection Logic (controlled by `ENVIRONMENT` and key presence):**
@@ -540,28 +543,28 @@ Define every environment variable before writing any code. All must be added to 
 ```
 ENVIRONMENT=development  (zero cost, start here):
   LLM primary   → GEMINI_API_KEY    (free, Google AI Studio)
-  LLM fallback  → GROQ_API_KEY      (free, Groq)
+  LLM fallback  → XAI_API_KEY       (free, xAI Grok)
   Embeddings    → HUGGINGFACE_API_KEY (free, sentence-transformers)
   Market data   → yfinance           (no key needed, Python library)
 
 ENVIRONMENT=staging  (low cost, validate before production):
   LLM primary   → ANTHROPIC_API_KEY  (Claude 3.5 Haiku, ~$5–20/month)
-  LLM fallback  → GROQ_API_KEY       (free, keep as fallback)
+  LLM fallback  → XAI_API_KEY        (free, xAI Grok — keep as fallback)
   Embeddings    → OPENAI_API_KEY     (text-embedding-3-small, ~$1/month)
-  Market data   → EODHD_API_KEY + DHAN_ACCESS_TOKEN
+  Market data   → yfinance (no key needed) + EODHD_API_KEY (if set, overrides yfinance)
 
 ENVIRONMENT=production  (full paid stack):
   LLM primary   → ANTHROPIC_API_KEY  (Claude 3.5 Haiku + prompt caching)
   LLM fallback  → OPENAI_API_KEY     (GPT-4o-mini)
   Embeddings    → OPENAI_API_KEY     (text-embedding-3-small)
-  Market data   → EODHD_API_KEY + DHAN_ACCESS_TOKEN
+  Market data   → yfinance (primary) + EODHD_API_KEY (optional upgrade)
 ```
 
 The startup validation must enforce: at least one LLM key is present AND at least one market data source is available. On startup, the service must log a clear provider summary, e.g.:
 ```
 [AI Service] Active providers:
   LLM primary  : Gemini 1.5 Flash (FREE)
-  LLM fallback : Groq Llama 3.1 8B (FREE)
+  LLM fallback : xAI Grok grok-3-mini (FREE)
   Embeddings   : HuggingFace all-MiniLM-L6-v2 (FREE)
   Market data  : yfinance (FREE)
 ```
@@ -578,7 +581,7 @@ These are non-negotiable security controls. Your AI assistant must implement all
 - Stock ticker inputs must be validated against the `stocks` master table — never pass a raw user-provided string as a ticker to any external API.
 
 **Authentication and Authorisation:**
-- Every protected route must validate the Supabase JWT from the `Authorization: Bearer <token>` header. Extract the `user_id` from the JWT claims. Never trust a user_id from the request body or query parameters.
+- Every protected route must validate the Supabase JWT using `createServerClient` from `@supabase/ssr` initialised with `SUPABASE_URL` and `SUPABASE_SECRET_KEY`. Call `supabase.auth.getUser()` to verify the token and extract the authenticated user — do not manually decode or verify JWTs. Supabase's new key system handles verification against the JWKS endpoint (`/auth/v1/.well-known/jwks.json`) internally. Never trust a `user_id` from the request body or query parameters — always use the value returned by `getUser()`.
 - All database queries on user-owned data must include a `WHERE user_id = $authenticated_user_id` clause. Never rely solely on Row Level Security — defence in depth means the application layer also enforces ownership.
 - Onboarding routes must be idempotent — calling them twice should update, not create duplicates.
 
@@ -600,7 +603,7 @@ These are non-negotiable security controls. Your AI assistant must implement all
 - No secrets in code, ever. All secrets come from environment variables. The Doppler CLI syncs secrets to `.env` files locally, never committed to git. Add `.env` and `.env.local` to `.gitignore` before the first commit.
 
 **Supabase RLS:**
-- Before writing any application data, verify Row Level Security is enabled on all user data tables by running a test: attempt to SELECT from a user_profiles row using the anon key without any JWT — this should return an empty result, not the data.
+- Before writing any application data, verify Row Level Security is enabled on all user data tables by running a test: attempt to SELECT from a user_profiles row using the publishable key without any JWT — this should return an empty result, not the data.
 
 **AI Output Handling:**
 - Never render AI-generated text using `dangerouslySetInnerHTML`. Always render it as plain text or use a safe Markdown renderer that strips all HTML.
@@ -643,7 +646,7 @@ The full testing prompts are in Prompts 20–22. Define the strategy here so it 
 
 **Integration Tests:**
 - Every API route must have an integration test that calls the actual route against a test database (Supabase local instance or a dedicated test Supabase project).
-- Every data ingestion pipeline must have an integration test that calls the actual EODHD/Dhan test endpoints (or recorded fixtures).
+- Every data ingestion pipeline must have an integration test using recorded yfinance response fixtures (stored in `__tests__/fixtures/yfinance/`) — do not make live yfinance calls in CI as they are network-dependent and flaky in test environments.
 - Every BullMQ job must have an integration test that enqueues the job and verifies the worker completes it correctly.
 
 **End-to-End Tests:**
